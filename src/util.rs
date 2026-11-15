@@ -56,7 +56,7 @@ pub fn create_zip_file(input_dir: &Path, archive_path: &Path) -> Result<(), io::
     entries.sort();
 
     let mut archive = ZipWriter::new(File::create(archive_path)?);
-    let options = SimpleFileOptions::default().compression_method(CompressionMethod::Stored);
+    let options = SimpleFileOptions::default().compression_method(CompressionMethod::Deflated);
 
     for path in entries {
         if !path.is_file() {
