@@ -1,0 +1,61 @@
+name: Generate enhanced GTFS
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+env:
+  OUTPUT_FILE: tec-gtfs-enhanced.zip
+  BMC_GTFS_URL: https://api-management-discovery-production.azure-api.net/api/gtfs/feed/tec/static
+  TEC_GTFS_URL: https://opendata.tec-wl.be/GTFSV3/TEC-GTFSV3.zip
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Download GTFS feeds
+        run: |
+          curl -fsSL --retry 3 -o bmc.zip "$BMC_GTFS_URL"
+          curl -fsSL --retry 3 -o tec.zip "$TEC_GTFS_URL"
+
+      - name: Run enhancer
+        run: |
+          cargo run --release --locked -- \
+            --gtfs-bmc bmc.zip \
+            --gtfs-tec tec.zip \
+            --output-dir working \
+            --output-file "$OUTPUT_FILE"
+
+      - name: Read feed version
+        id: version
+        run: |
+          version=$(awk -F ',' 'NR==2 { for (i=1;i<=NF;i++) if ($i ~ /.*\+tec.*\+bmc.*/) { print $i; break; } }' working/tec/feed_info.txt)
+          echo "feed_version=$version" >> "$GITHUB_OUTPUT"
+          echo "**Feed version:** $version" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: ${{ env.OUTPUT_FILE }}
+          body: |
+            **Feed version**: ${{ steps.version.outputs.feed_version }}
+          tag_name: latest
+          name: "Latest feed"
