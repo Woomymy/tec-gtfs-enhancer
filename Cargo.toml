@@ -1,0 +1,25 @@
+[package]
+name = "tec-gtfs-enhancer"
+description = "Utility to merge BMC and LETEC feeds to get best of both worlds"
+license = "MIT"
+repository = "https://github.com/woomymy/tec-gtfs-enhancer"
+version = "0.1.0"
+edition = "2024"
+keywords = ["gtfs", "letec"]
+categories = ["gtfs", "letec"]
+
+[dependencies]
+clap = { version = "4.6.7", features = ["derive"] }
+polars = { version = "0.55.2", features = ["lazy", "strings"] }
+sloggrs = "0.1.0"
+zip = "9.5.1"
+
+[lints.clippy]
+all = { level = "warn", priority = 0 }                                                                                                                                       
+pedantic = { level = "warn", priority = 0 }                                                                                                                                  
+nursery = { level = "warn", priority = 0 }                                                                                                                                   
+cargo = { level = "warn", priority = 0 }       
+
+[lints.clippy.multiple_crate_versions]
+level = "allow"
+priority = 1
